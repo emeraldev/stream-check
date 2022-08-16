@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  stream-checker
+
+  Sample SAM Template for stream-checker
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 30
+
+Resources:
+  StreamFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: main/
+      Handler: app.setStream
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        CheckStream:
+          Type: Api
+          Properties:
+            Path: /stream
+            Method: post
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StreamTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref StreamTable
+  RemoveStreamFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: main/
+      Handler: app.removeStream
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        CheckStream:
+          Type: Api
+          Properties:
+            Path: /stream/{userId}
+            Method: delete
+  ListStreamsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: main/
+      Handler: app.getStream
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        CheckStream:
+          Type: Api
+          Properties:
+            Path: /stream
+            Method: get
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StreamTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref StreamTable
+
+StreamTable:
+  Type: AWS::Serverless::SimpleTable
+  Properties:
+    PrimaryKey: streamId
+    TableName: stream-table
