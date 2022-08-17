@@ -1,7 +1,7 @@
 const { DynamoDB } = require("aws-sdk")
 const db = new DynamoDB.DocumentClient({
     region: "localhost",
-    endpoint: "http://localhost:8000",
+    endpoint: "http://ddb_local:8000",
 });
 const { uuid } = require('uuidv4');
 const TableName = process.env.TABLE_NAME
