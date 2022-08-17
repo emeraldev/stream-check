@@ -6,37 +6,49 @@ const db = new DynamoDB.DocumentClient({
 const { uuid } = require('uuidv4');
 const TableName = process.env.TABLE_NAME
 
-let body = {}
+let streams = [];
+let statusCode = 200;
+let errorMessage;
 
 exports.setStream = async (event, context) => {
     try {
         const requestBody = JSON.parse(event.body);
-        const stream = {
-            streamId: uuid(),
-            userId: requestBody.userId,
+
+        if (!requestBody.streams) {
+            statusCode = 400;
+            errorMessage = "User not streaming";
+        } else {
+            if (requestBody.streams.length < 3) {
+                /*await db
+                    .put({
+                        TableName,
+                        Item: stream,
+                    })
+                    .promise()*/
+                let watching = requestBody.streams;
+                for (let stream in watching) {
+                    streams.push({
+                        streamId: uuid(),
+                        userId: watching[stream].userId
+                    });
+                }
+            } else {
+                statusCode = 400;
+                errorMessage = "Maximum limit reached, Unable to start a new stream.";
+            }
         }
 
-        await db
-            .put({
-                TableName,
-                Item: stream,
-            })
-            .promise()
-
-        body = stream;
         return {
-            'statusCode': 200,
-            'body': JSON.stringify(body)
+            statusCode: statusCode,
+            body: JSON.stringify(streams),
+            errorMessage: errorMessage,
         };
-    } catch (err) {
-        console.log(err);
-        return err;
-    }
 
-    return {
-        'statusCode': 200,
-        'body': JSON.stringify(body)
-    };
+    } catch (err) {
+        statusCode = (err.response && err.response.status) ? err.response.status : 500;
+        console.log(err);
+        errorMessage = err.message ? err.message : 'Internal Server Error';
+    }
 };
 
 exports.removeStream = async (event, context) => {
@@ -59,7 +71,6 @@ exports.removeStream = async (event, context) => {
 
 exports.getStream = async (event, context) => {
     try {
-        console.log(TableName);
         const streams = await db
             .scan({
                 TableName,
