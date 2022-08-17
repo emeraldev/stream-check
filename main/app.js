@@ -38,17 +38,18 @@ exports.setStream = async (event, context) => {
             }
         }
 
-        return {
-            statusCode: statusCode,
-            body: JSON.stringify(streams),
-            errorMessage: errorMessage,
-        };
-
     } catch (err) {
         statusCode = (err.response && err.response.status) ? err.response.status : 500;
         console.log(err);
         errorMessage = err.message ? err.message : 'Internal Server Error';
     }
+
+    const response = {
+        statusCode: statusCode,
+        errorMessage: errorMessage
+    };
+
+    context.succeed(response);
 };
 
 exports.removeStream = async (event, context) => {
